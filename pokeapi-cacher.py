@@ -6,8 +6,10 @@ import requests_cache as req_cache
 import argparse
 from random import randrange,uniform
 
+# global vars
+cache_location="pokeapi-cache" #files stored in this directory
 pokeapi_base_url="https://pokeapi.co/api/v2/"
-pkmn_url = pokeapi_base_url + "pokemon"
+
 
 # initializer argument parser for CLI
 def init_parser(): # -> argparse.ArgumentParser
@@ -41,17 +43,19 @@ def init_parser(): # -> argparse.ArgumentParser
 #fed
 
 # create the directories in the current directory if they don't exist
-def mkdir(option):
-    if not os.path.exists(option):
-        os.mkdir(option)
+def mkdir(endpoint):
+    if not os.path.exists(endpoint):
+        os.mkdir(endpoint)
     #fi
 #fed
 
-# in: url: string, option: string, session: request_cache session
-def fetch(url, option, session):
-    
+# in: url: string, endpoint: string, session: request_cache session
+def fetch(url, endpoint, session):
+    # files will be saved in endpoints-cache/endpoint/id.json
+    # default cache_location="pokeapi-cache"
     i=1
     while True:
+        # don't overload the pokeapi server by waiting between requests
         wait=uniform(0.5,1.0)
         # print("wait: " + str(wait))
         time.sleep(wait)
@@ -63,17 +67,18 @@ def fetch(url, option, session):
             if i == 100:
                 break
             #fi
+        # actual run
         else:
             # GET request
             r=session.get(url2)
-            
+            # path to save file to
+            # you may want to change this
+            file_path="{_cache_location}/{_endpoint}/{_i}.json".format(_cache_location=cache_location,_endpoint=endpoint,_i=i)
             # write to file
-            with open("{_option}/{_i}.json".format(_option=option,_i=i), "w") as f:
+            with open(file_path, "w") as f:
                 f.write(r.text)
             #end
-            # next
-            
-            
+            # show status code
             print("[status]: {_status_code}".format(_status_code=r.status_code))
             # quit when done
             if r.status_code == 404:
@@ -86,32 +91,33 @@ def fetch(url, option, session):
 
 # in: args, list of strings from `argparse.ArgumentParser.parse_args()` to parse
 def dl(args):
-    options_list = []
+    endpoints = []
     
-    session = req_cache.CachedSession('pokeapi-pkmn-cache')
-    # create array from parsed args
+    session = req_cache.CachedSession('pokeapi-cache') # pokeapi-cache.sqlite
+    # create array from parsed args for endpoints that you wish to cache
     if args.berry   == True:
         pass
-        options_list.append("berry")
+        endpoints.append("berry")
     #fi
     if args.move    == True:
         pass
-        options_list.append("move")
+        endpoints.append("move")
     #fi
     if args.pokemon == True:
         pass
-        options_list.append("pokemon")
+        endpoints.append("pokemon")
     #fi
 
-    for option in options_list:
+    # run caching for each endpoint
+    for endpoint in endpoints:
         pass
-        print("caching endpoints for: {_option}".format(_option=option))
+        print("caching endpoints for: {_endpoint}".format(_endpoint=endpoint))
         # give the function url to fetch
-        url=pokeapi_base_url + option
-        # make folder
-        mkdir(option)
-        # GET the urls
-        fetch(url, option, session)
+        url=pokeapi_base_url + endpoint
+        # make folder for that particular endpoint if it doesn't exist
+        mkdir("{_cache_location}".format(_cache_location=cache_location) + "/" + endpoint)
+        # GET the urls and cache them to file
+        fetch(url, endpoint, session)
     #end
 #fed
 
