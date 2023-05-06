@@ -10,15 +10,18 @@ Directory | Description
 |poke-rs-api | source code for rust backend
 
 
-Thi is a [Pokeapi](https://pokeapi.co/) mirror that serves static JSON with a Rust Axum backend(hence the name), so it should be performant. This was built to have a local and performant backend to learn about and test REST apis.
+Thi is a [Pokeapi](https://pokeapi.co/) mirror that serves static JSON with a Rust Axum backend(hence the name), so it should be performant. This was built as an education experience and also serves as useful tool for local backend developing and testing REST apis.
 
 ## Quick Start
+
+You need to populate your cache so the server can use the data to serve the local REST api.
+
 Download and cache the endpoints you want to use with the python script `pokeapi-cacher.py`.
 
 ```sh
 $ python pokeapi-cacher.py <list-of-endpoints>
 ```
-e.g. Download all files from endpoints: pokemon, berry, move, See: [here](https://pokeapi.co/docs/v2) for available endpoints
+e.g. Download cache all files from endpoints: pokemon, berry, move, See: [here](https://pokeapi.co/docs/v2) for available endpoints
 
 
 ```sh
@@ -44,9 +47,9 @@ pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1
 
 ---
 
-## Details
+## Serving the API over the Internet
 
-This backend is meant to be used with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html) or used standalone for local development. It simply listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>`.
+The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html) to serve data over the internet securely.
 
 The default port is `3001` but can be changed with an argument when running the server.
 
