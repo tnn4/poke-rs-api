@@ -49,15 +49,13 @@ pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1
 
 ## Serving the API over the Internet
 
-The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html) to serve data over the internet securely.
+The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html)  to forward requests to localhost and serve data over the internet securely.
 
 The default port is `3001` but can be changed with an argument when running the server.
 
 ```bash
 $ bin/poke-rs-api --port <your-port>
 ```
-
-If you want to serve the REST api over the internet you should add a reverse proxy to forward requests to this backend. You can tell the backend to listen on all domains with `0.0.0.0` but that would be dangerous.
 
 Nginx example conf in `/etc/nginx/nginx.conf`:
 
