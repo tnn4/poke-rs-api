@@ -1,0 +1,11 @@
+# example of what your auth.toml should look like
+# do not put your actual info here unless you want to have a bad time
+
+title = "authorization example file"
+
+[auth]
+user_agent="windows:roux:v0.1.0 /u/your_user_name"
+client_id="client id here"
+client_secret="client secret here"
+username="your-username"
+password="your-password"

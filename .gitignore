@@ -1,0 +1,7 @@
+berry
+pkmn
+pokemon
+pokeapi-pokemon.zip
+pokeapi-pkmn-cache.sqlite
+*.sqlite
+*.sqlite/

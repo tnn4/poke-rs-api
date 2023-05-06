@@ -1,0 +1,1 @@
+use pokemon json to extract their names
