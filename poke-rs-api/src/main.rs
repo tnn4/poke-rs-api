@@ -61,6 +61,7 @@ async fn main() {
             .help("Set port for server to listen on")
         )
         .get_matches();
+    
     if let Some(p) = cmd_arg_matches.get_one::<String>("port") {
         
         match p.parse::<u16>() {
@@ -70,8 +71,12 @@ async fn main() {
         println!("Value for port is now: {}", port);
     }
     
-    // initialize tracing
-    tracing_subscriber::fmt::init();
+    // Logging
+    //tracing_subscriber::fmt::init()
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+    
     // let method_router : axum::routing::method_routing::MethodRouter = get(|Path(id):Path<u32>| async {});
     // build web application with routes
     let get_id_route : axum::routing::method_routing::MethodRouter  = get(get_id);
@@ -90,7 +95,7 @@ async fn main() {
     // 
     // nested api
     // /api
-    let berry_route: axum::Router =Router::new().route("/berry/:id", get(placeholder));
+    let berry_route: axum::Router =Router::new().route("/berry/:id", get(return_json_file_berry));
     let move_route=Router::new().route("/move/:id", get(placeholder));
     let pkmn_route=Router::new().route("/pokemon/:id", get(placeholder));
     let pokeapiv2_route = Router::new()
@@ -109,11 +114,13 @@ async fn main() {
         .route("/todos", get(get_todos))
         .route("/toml", get(return_toml_handler))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
+        .route("/pokeapi", get(placeholder))
         .nest("/pokeapi/v2", berry_route)
         .nest("/pokeapi/v2", move_route)
         .nest("/pokeapi/v2", pkmn_route)
+        // timeout at 30 seconds
         .layer(
-            // timeout at 30 seconds
+            
             tower::ServiceBuilder::new()
                 .layer(axum::error_handling::HandleErrorLayer::new(handle_timeout_error))
                 // `cargo add tower --features timeout`
@@ -127,7 +134,9 @@ async fn main() {
     // run app
     let localhost = ([127,0,0,1],port);
     let socket_all = ([0,0,0,0], port);
-    let addr = SocketAddr::from(socket_all);
+    
+    let addr = SocketAddr::from(localhost);
+    
     tracing::debug!("listening on {}", addr);
     println!("listening on {}", addr);
     axum::Server::bind(&addr)
@@ -139,6 +148,34 @@ async fn main() {
 }
 // end-main
 
+async fn return_json_file_berry(
+    axum::extract::Path(id): axum::extract::Path<u32>)-> Result<impl IntoResponse,StatusCode>{
+    
+    let file_name = format!("{}.json",id);
+    let file_name_path = format!("../berry/{}.json",id);
+
+    let file_ok = match tokio::fs::File::open(&file_name_path).await {
+        Ok(file) => {
+            println!("Getting {}",&file_name);
+            file},
+        Err(err) => return Err(StatusCode::NOT_FOUND/*, format!("File not found: {}", err)*/),
+    };
+    // Convert `AsyncRead` into a `Stream`
+    let stream = ReaderStream::new(file_ok);
+    // Convert the `Stream` into an `axum::body::HttpBody`
+    let http_body = StreamBody::new(stream);
+
+    let a = format!("attachment; filename=\"{}\"", file_name.clone());
+    let a_str: &str = &a[..];
+    let headers = //[(HeaderName, &'static str) ; 2]
+        [
+            (header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
+            (header::CONTENT_DISPOSITION, a),
+        ]
+    ;
+
+    Ok((headers,http_body))
+}
 
 // Handle timeout
 async fn handle_timeout_error(
@@ -215,7 +252,7 @@ async fn list_things(pagination: Query<Pagination>) {
 // Return files dynamically: https://github.com/tokio-rs/axum/discussions/608
 async fn return_toml_handler() -> Result<impl IntoResponse,StatusCode> {
     // `File implements `AsyncRead`
-    let file = match tokio::fs::File::open("cargo.toml").await {
+    let file = match tokio::fs::File::open("Cargo.toml").await {
         Ok(file) => file,
         Err(err) => return Err(StatusCode::NOT_FOUND/*, format!("File not found: {}", err)*/),
     };
