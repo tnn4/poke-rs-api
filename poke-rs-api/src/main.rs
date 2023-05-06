@@ -104,6 +104,11 @@ async fn main() {
         .nest("/pokeapi/v2/", pkmn_route.clone())
     ;
 
+    // Pokeapi/v2 Route
+    let pokeapi_route: axum::Router=Router::new()
+        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_route_handler));
+
+    // Generate App
     let app = Router::new()
         // `GET -> /`
         .route("/:id", get_id_route.clone())
@@ -115,9 +120,10 @@ async fn main() {
         .route("/toml", get(return_toml_handler))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
         .route("/pokeapi", get(placeholder))
-        .nest("/pokeapi/v2", berry_route)
-        .nest("/pokeapi/v2", move_route)
-        .nest("/pokeapi/v2", pkmn_route)
+        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_route_handler))
+        //.nest("/pokeapi/v2", berry_route)
+        //.nest("/pokeapi/v2", move_route)
+        //.nest("/pokeapi/v2", pkmn_route)
         // timeout at 30 seconds
         .layer(
             
@@ -148,25 +154,56 @@ async fn main() {
 }
 // end-main
 
+async fn pokeapi_route_handler(
+    // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
+    axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,u32)>,)
+    // axum::extract::Path(_id): axum::extract::Path<u32>) 
+    -> Result<impl IntoResponse, StatusCode>{
+    
+    println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id );
+
+    let file_name = format!("{}.json", _id);
+    // location to look for file
+    let file_name_location = format!("../{}/{}.json", _endpoint,_id);
+
+    let contents = match fs::read_to_string(file_name_location) {
+        Ok(string) => string,
+        Err(err) => err.to_string(),
+    };
+    let headers = 
+    [
+        (axum::http::header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
+    ];
+
+    Ok((headers, contents))
+}
+
+// return file
 async fn return_json_file_berry(
     axum::extract::Path(id): axum::extract::Path<u32>)-> Result<impl IntoResponse,StatusCode>{
     
+    // filenames
     let file_name = format!("{}.json",id);
+    // location to look for file
     let file_name_path = format!("../berry/{}.json",id);
 
+    // open the file
     let file_ok = match tokio::fs::File::open(&file_name_path).await {
         Ok(file) => {
             println!("Getting {}",&file_name);
             file},
         Err(err) => return Err(StatusCode::NOT_FOUND/*, format!("File not found: {}", err)*/),
     };
+    
     // Convert `AsyncRead` into a `Stream`
     let stream = ReaderStream::new(file_ok);
     // Convert the `Stream` into an `axum::body::HttpBody`
     let http_body = StreamBody::new(stream);
 
+    // Create body for content header
     let a = format!("attachment; filename=\"{}\"", file_name.clone());
     let a_str: &str = &a[..];
+    
     let headers = //[(HeaderName, &'static str) ; 2]
         [
             (header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
