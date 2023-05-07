@@ -3,17 +3,13 @@
 // use std::path::Path;
 
 use axum_macros::debug_handler;
-
 // command line arguments
 use clap::Parser;
-
 // files
 use std::fs;
-
 use std::collections::HashMap;
 // time
 use std::time::Duration;
-
 // axum web framework
 use std::net::SocketAddr;
 use axum::{
@@ -26,18 +22,13 @@ use axum::{
     Json, Router,
 };
 use tokio_util::io::ReaderStream;
-
 use tower_http::{compression::CompressionLayer, BoxError};
-
 // serialization
 use serde_derive::{Deserialize, Serialize};
-
 // read from toml
 use toml;
 use toml::Table;
-
 use poke_rs_api::pkmn::Pokemon;
-
 use std::sync::Arc;
 
 #[derive(Clone,Serialize, Deserialize)]
@@ -56,7 +47,7 @@ async fn main() {
     // Shared State
     // See: https://docs.rs/axum/latest/axum/index.html#sharing-state-with-handlers
     let state = Arc::new(AppState {
-        m: init_pokemap(),
+        m: poke_rs_api::pkmn::mapper::init_pokemap(),
     });
 
     // Defaults
@@ -92,42 +83,14 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
-    
-    // let method_router : axum::routing::method_routing::MethodRouter = get(|Path(id):Path<u32>| async {});
-    // build web application with routes
-    let get_id_route : axum::routing::method_routing::MethodRouter  = get(get_id);
-    let user_route = Router::new().route("/:id", get_id_route.clone());
-    let team_route = Router::new().route("/", post(|| async {}));
-    
-    let api_routes = Router::new()
-        .nest("/users", user_route)
-        .nest("/teams", team_route);
-
-    let app_with_nested_routes = Router::new()
-        .nest("/api", api_routes);
-    // App now accepts
-    // - GET /api/users/:id
-    // - POSpokT /api/teams
-    // 
-    // nested api
-    // /api
-    let berry_route: axum::Router =Router::new().route("/berry/:id", get(return_json_file_berry));
-    let move_route=Router::new().route("/move/:id", get(placeholder));
-    let pkmn_route=Router::new().route("/pokemon/:id", get(placeholder));
-    let pokeapiv2_route = Router::new()
-        .nest("/pokeapi/v2/", berry_route.clone())
-        .nest("/pokeapi/v2/", move_route.clone())
-        .nest("/pokeapi/v2/", pkmn_route.clone())
-    ;
 
     // Generate ROUTES
     let app = Router::new()
         // `GET -> /`
         //.with_state(state)
-        .route("/:id", get_id_route.clone())
+        .route("/:id", get(poke_rs_api::api::get_id.clone()))
         .route("/", get(get_root))
         .route("/quote", get(return_quote))
-        .route("/toml", get(return_toml_handler))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
         .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_handler_for_id))
         // timeout at 30 seconds
@@ -172,9 +135,7 @@ async fn pokeapi_handler_for_id(
         // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
         // State(state): State<std::sync::Arc<AppState>>,
         Extension(state): Extension<Arc<AppState>>,
-        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,
-        
-        
+        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,    
     )
     // axum::extract::Path(_id): axum::extract::Path<u32>) 
     -> Result<impl IntoResponse, StatusCode>{
@@ -230,42 +191,6 @@ async fn pokeapi_handler_for_id(
     Ok((headers, contents))
 }
 
-// return file
-async fn return_json_file_berry(
-    axum::extract::Path(id): axum::extract::Path<u32>)-> Result<impl IntoResponse,StatusCode>{
-    
-    // filenames
-    let file_name = format!("{}.json",id);
-    // location to look for file
-    let file_name_path = format!("../berry/{}.json",id);
-
-    // open the file
-    let file_ok = match tokio::fs::File::open(&file_name_path).await {
-        Ok(file) => {
-            println!("Getting {}",&file_name);
-            file},
-        Err(err) => return Err(StatusCode::NOT_FOUND/*, format!("File not found: {}", err)*/),
-    };
-    
-    // Convert `AsyncRead` into a `Stream`
-    let stream = ReaderStream::new(file_ok);
-    // Convert the `Stream` into an `axum::body::HttpBody`
-    let http_body = StreamBody::new(stream);
-
-    // Create body for content header
-    let a = format!("attachment; filename=\"{}\"", file_name.clone());
-    let a_str: &str = &a[..];
-    
-    let headers = //[(HeaderName, &'static str) ; 2]
-        [
-            (header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
-            (header::CONTENT_DISPOSITION, a),
-        ]
-    ;
-
-    Ok((headers,http_body))
-}
-
 // Handle timeout
 async fn handle_timeout_error(
     method: axum::http::Method,
@@ -289,97 +214,10 @@ async fn get_root() -> &'static str {
     "You got root"
 }
 
-// read
-async fn get_id(Path(id): Path<u32>) -> String {
-    "endpoint: read placedholder";
-    id.to_string()
-}
 
-// extract data from url, i.e. extract query
-
-#[derive(Deserialize)]
-struct Pagination {
-    page: usize,
-    per_page: usize,
-}
-
-// This will parse query strings like `?page=2&per_page=30` into `Pagination`
-// structs.
-async fn list_things(pagination: Query<Pagination>) {
-    let pagination: Pagination = pagination.0;
-
-    // ...
-}
-
-// usage: let app = Router::new().route("/list_things", get(list_things));
-// a bad query will -> 400 Bad Request
-
-// Return files dynamically: https://github.com/tokio-rs/axum/discussions/608
-async fn return_toml_handler() -> Result<impl IntoResponse,StatusCode> {
-    // `File implements `AsyncRead`
-    let file = match tokio::fs::File::open("Cargo.toml").await {
-        Ok(file) => file,
-        Err(err) => return Err(StatusCode::NOT_FOUND/*, format!("File not found: {}", err)*/),
-    };
-    // Convert `AsyncRead` into a `Stream`
-    let stream = ReaderStream::new(file);
-    // Convert the `Stream` into an `axum::body::HttpBody`
-    let http_body = StreamBody::new(stream);
-
-    let headers = //[(HeaderName, &'static str) ; 2]
-        [
-            (header::CONTENT_TYPE, "text/toml; charset=utf-8"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=\"Cargo.toml\""),
-        ]
-    ;
-
-    Ok((headers,http_body))
-}
 
 async fn return_quote() -> &'static str {
     r#""Give a man a fire and he's warm for a day, 
 but set fire to him and he's warm for the rest of his life."
     - Terry Pratchett, Jingo"#
-}
-
-fn init_pokemap() -> /*HashMap<String,String>*/toml::Table {
-    let file_path="../poke2id.toml";
-    let mut toml_object: toml::Table = Default::default();
-    assert!(std::path::Path::new(file_path).exists());
-    
-    // open toml
-    //let mut file=std::fs::File::open(file_path);
-    let mut contents = String::new();
-    // WARNING: the variable inside if let is a totally different variable
-    if let contents2=std::fs::read_to_string(file_path){
-        println!("READ: success");
-        // println!("{}", contents.unwrap());
-        contents = contents2.unwrap();
-    } else {
-        panic!("[ERROR]: can't read file");
-    }
-    //match std::fs::read_to_string(&mut toml) {
-        //Ok(string) => string,
-        //Err(err) => err,
-    //};
-    println!("{}", contents);
-    // let toml_object : HashMap<String, String> = toml::from_str(&contents).unwrap();
-    
-    if let toml_object2 = contents.parse::<toml::Table>().unwrap() {
-        println!("[OK]:POKEMAP initialized ");
-        toml_object=toml_object2;
-    } else {
-        panic!("[ERROR]: could not read mapping");
-    }
-    
-    // ERROR here
-    println!("toml_object: {:?}", toml_object); // -> {}
-    // assert_eq!(toml_object["bulbasaur"], "1".to_string());
-    // assert_eq!(toml_object["bulbasaur"], toml::Value::String("1".to_string()));
-    assert_eq!(toml_object["bulbasaur"], toml::Value::Integer(1));
-    println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
-    // read it
-    // then add it to dictionary
-    // let mut poke2id: HashMap<String,String> = HashMap::new();
-    toml_object
 }

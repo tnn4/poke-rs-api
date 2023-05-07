@@ -2,7 +2,7 @@
 extern crate num_derive;
 pub mod pkmn;
 pub mod util;
-
+pub mod api;
 
 
 use serde_derive::Deserialize;
