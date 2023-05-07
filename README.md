@@ -1,8 +1,19 @@
-# Poke-rs API
+# Pkmn API
+
+TODO
+- Dockerize/containerize
+- Add nginx to docker-compose
+
+Compatibility: This was developed and tested on Ubuntu 22.04. This app should work on most Linux platforms and WSL2 if you're feeling adventurous. 
+You can always Dockerize/containerize it to make it more portable.
 
 Requires:
-- [python](https://www.python.org/downloads/)
-- [rust](https://www.rust-lang.org/tools/install) (if developing)
+- Docker
+- If no docker
+    - [python](https://www.python.org/downloads/) v3.10.6
+    - [rust](https://www.rust-lang.org/tools/install) (if developing) rustc v1.68.0, cargo v1.68.0
+
+---
 
 This is a [Pokeapi](https://pokeapi.co/) mirror that can be used to serve a subset of the api using Rust Axum backend(hence the name). This was built as an education experience and also serves as a performant tool for backend development and testing REST apis. 
 
@@ -14,24 +25,43 @@ Directory | Description
 |pokeapi-cache | static json files for serving
 |poke-rs-api | source code for rust backend
 
+---
 
-## Quick Start
+## Populate Cache
+
+
 
 You need to populate your cache so the server can use the cached data to serve the REST api.
 
-Download and cache the endpoints you want to use with the python script `pokeapi-cacher.py`.
+This repo has zip files with the static json files for some pre-cached endpoints stored in `pokeapi-cache-zip` that you extract to `pokeapi-cache`
+Make sure the directory looks like this.
+```
+pokeapi-cache
+|--berry
+|--move
+|--pokemon
+```
+
+Download the rest of the endpoints you want to use with the python script `pokeapi-cacher.py`.
 
 ```sh
 $ python pokeapi-cacher.py <list-of-endpoints>
 ```
+
 e.g. Download cache all files from endpoints: pokemon, berry, move, See: [here](https://pokeapi.co/docs/v2) for available endpoints
-
-
 ```sh
 $ python pokeapi-cacher.py --endpoint pokemon --endpoint berry --endpoint move
 ```
 
+
+### Generate lookup table from cache
 Once the files are cached to `pokeapi-cache` you can serve them with the provided backend.
+
+If you want to be able to look up a resource by name you'll have to generate mapping from name to id since the files are stored as `<id>.json`.
+
+`$ map2id.py berry && map2id.py pokemon`
+
+Note: this can't be done for some endpoints like `move` since it currently generates duplicate keys in the toml file. 
 
 ```
 $ bin/poke-rs-api
@@ -40,7 +70,31 @@ $ bin/poke-rs-api
 The server will listen on `http://localhost:3001`
 and will serve endpoints like `http://localhost:3000/pokeapi/pokemon/0`
 
-Available Endpoints
+---
+
+## Build with docker container
+If you have Docker and have available memory and disk space, use the provided `Dockerfile` to do all the work for you.
+
+[Important: Build the cache first](#populate-cache)
+
+```sh
+$ docker build . # don't forget the dot(.)
+```
+
+If you want to use a custom dockerfile name do:
+- `$ docker build <path-to-dockerfile> <path-to-context>`
+
+If you want to give your image a name, you'll have to put it from the command line [src](https://stackoverflow.com/questions/38986057/how-to-set-image-name-in-dockerfile). Dockerfiles don't support tagging.
+- `$ docker build -t me/myapp:tag -f <path-to-dockerfile> <path-to-context>`
+- e.g. `$ docker build -t me/poke-rs-api:v0.1.0 -f mydockerfile .`
+
+In this case something like:
+- `$ docker build -f yourDockerfile .`
+
+Run `docker image` to find the built image
+The build command should have given an Image ID like: `ae5528709935...`
+
+### Available Endpoints
 
 These are the endpoints that the backend can serve. You can always extend the source to add more.
 
@@ -50,7 +104,7 @@ Endpoints that can be retrieved by name means you can pass a name for the item i
 Endpoint | Description | Example URL | retrieve by name
 |---|---|---|---
 berry | berry data | http://localhost/pokeapi/v2/berry/1 | yes
-move | pokemon moves | http://localhost/pokeapi/v2/1 | no
+move | pokemon moves | http://localhost/pokeapi/v2/move/1 | no
 pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1 | yes
 
 
