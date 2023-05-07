@@ -11,15 +11,15 @@ from random import randrange,uniform
 cache_location="pokeapi-cache" #files stored in this directory
 pokeapi_base_url="https://pokeapi.co/api/v2/"
 valid_endpoints=(
-    "berry","berry-firmness", "berry-flavors"\
-    "contest-type", "contest-effect", "super-contest-effect"\
-    "encounter-methods", "encounter-condition", "encounter-condition-value"\
-    "evolution-chain", "evolution-trigger"\
-    "generation", "pokedex", "version", "version-group"\
-    "item", "item-attribute", "item-category", "item-fling-effect", "item-pocket"\
+    "berry","berry-firmness", "berry-flavors",\
+    "contest-type", "contest-effect", "super-contest-effect",\
+    "encounter-methods", "encounter-condition", "encounter-condition-value",\
+    "evolution-chain", "evolution-trigger",\
+    "generation", "pokedex", "version", "version-group",\
+    "item", "item-attribute", "item-category", "item-fling-effect", "item-pocket",\
     "location", "location-area", "pal-park-area", "region"\
-    "machine"\
-    "ability", "characteristic", "gender", "growth-rate", "nature", "pokeathlon-stat", "pokemon", "pokemon-location-area", "pokemon-color", "pokemon-form", "pokemon-habitat", "pokemon-shape", "pokemon-species", "stat", "type"\
+    "machine",\
+    "ability", "characteristic", "gender", "growth-rate", "nature", "pokeathlon-stat", "pokemon", "pokemon-location-area", "pokemon-color", "pokemon-form", "pokemon-habitat", "pokemon-shape", "pokemon-species", "stat", "type",\
 )
 
 # initializer argument parser for CLI
@@ -61,6 +61,12 @@ def init_parser(): # -> argparse.ArgumentParser
         action="store_true",
         help="run tests"
     )
+    parser.add_argument(
+        '-l',
+        '--list-endpoint',
+        action="store_true",
+        help="list available pokeapi endpoints"
+    )
 
     return parser
 #fed
@@ -78,8 +84,8 @@ def fetch(url, endpoint, session):
     # default cache_location="pokeapi-cache"
     i=1
     while True:
-        # don't overload the pokeapi server by waiting between requests
-        wait=uniform(0.5,1.0)
+        # prevent overloading the pokeapi server by waiting between requests
+        wait=uniform(0.5,0.7)
         # print("wait: " + str(wait))
         time.sleep(wait)
         url2=url + "/" + str(i)
@@ -145,8 +151,9 @@ def dl(args):
         #rof
         if should_append:
             endpoints.append(arg)
+            print("added " + arg)
         else:
-            print("found duplicate skipping")
+            print("found duplicate "+arg+" skipping")
     #rof
 
     # run caching for each endpoint
@@ -182,6 +189,11 @@ if __name__ == "__main__":
     # run tests if wanted
     if args.test == True:
         test.tests.test_duplicate_args()
+        os._exit(0)
+    #fi
+    if args.list_endpoint:
+        print("Available pokeapi endpoints:")
+        print(", ".join(valid_endpoints))
         os._exit(0)
     #fi
     print("dry_run: " + str(args.dry_run))

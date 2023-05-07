@@ -150,7 +150,7 @@ http {
         # pokeapi endpoints
         # you can use regex with locaitons
         # use: https://regex101.com/
-        location ~ \/pokeapi\/v2\/(berry|pokemon)\/[0-9]+ {
+        location ~ \/pokeapi\/v2\/(berry|move|pokemon)\/[A-Za-z0-9]+ {
             proxy_pass http://127.0.0.1:3001$request_uri;
             default_type application/json;
         }

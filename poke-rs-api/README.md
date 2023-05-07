@@ -1,10 +1,3 @@
 # Poke rs api
 
-current routes:
-- GET /
-- GET /api
-- GET /pkmn
-- GET /html
-
-Learn about authentication, and login screens.
-- Open source auth server
+Mirror of [pokeapi](https://pokeapi.co/) with [axum](https://github.com/tokio-rs/axum) backend.

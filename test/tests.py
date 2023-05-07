@@ -6,7 +6,7 @@ def test_duplicate_args():
 
 
     # if endpoints are added multiple times it should be skipped to prevent duplication(idempotent)
-    # endpoint = [a,b,c] arg=[a] -> break for a
+    # endpoint = [a,b,c] arg=[a] -> skip a
     for arg in args_endpoints:
         # add if not duplicate
         should_append=True

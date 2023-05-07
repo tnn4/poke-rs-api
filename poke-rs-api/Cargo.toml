@@ -5,6 +5,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# see: https://doc.rust-lang.org/cargo/reference/profiles.html
+[profile.dev]
+opt-level=1
+
+[profile.release]
+opt-level=3
+
 [dependencies]
 axum = { version ="0.6.17", features=["headers"] }
 axum-macros = "0.3.7"

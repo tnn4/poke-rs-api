@@ -1,6 +1,8 @@
 import sys, os
 import json
 
+# read pokeapi-cache to create a hashmap to speed up looks up by the backend
+# the endpoint files need to be all cached before this can work
 
 # see: https://pynative.com/python-count-number-of-files-in-a-directory/
 # returns number of files in a directory
@@ -27,7 +29,7 @@ if __name__ == "__main__":
     valid_endpoints=("berry","move","pokemon")
     # no arg
     if len(sys.argv) == 1:
-        print("Requires 1 argument: endpoint to map <berry|move|pokemon>")
+        print("Requires 1 argument: endpoint to map e.g. <berry|move|pokemon>")
         os._exit(-1)
     # help
     elif sys.argv[1] == "-h" or sys.argv[1] == "--help":
@@ -58,9 +60,9 @@ if __name__ == "__main__":
             print("dir_path=" + dir_path)
         #fi
     else:
-        os._exit(-1) # this is supposed to run
+        os._exit(-1)
     
-    with open("{_endpoint}2id.toml".format(_endpoint=endpoint_arg), "w") as toml:
+    with open("mappings/{_endpoint}2id.toml".format(_endpoint=endpoint_arg), "w") as toml:
         end=get_file_count(dir_path) + 1
         for n in range(1, end):
             with open("{_dir_path}/{_n}.json".format(_dir_path=dir_path,_n=n), "r") as f:
@@ -71,16 +73,5 @@ if __name__ == "__main__":
                 f.close()
             #end
         #rof
-    #nepo
-
-    #f = open("pkmn/1.json")
-    #json_dump = json.dumps(f)
-    #print(json_dump)
-    # with open("pkmn/1.json", "r") as f:
-        # data = json.load(f)
-    #end
-
-    #print(data)
-    #print(data["name"])
-    #print(data["id"])
+    #close
 #fi

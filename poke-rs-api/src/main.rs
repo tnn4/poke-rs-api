@@ -171,13 +171,13 @@ async fn pokeapi_endpoint(
                 },
                 /*"move" => {
                     _id2 = state.move_m[&_id].clone().as_integer().expect("should be integer").to_string();
-                },
+                },*/
                 "pokemon" => {
                     _id2 = state.pokemon_m[&_id].clone().as_integer().expect("should be integer").to_string();
-                },*/
+                },
                 _ => {
                     println!("invalid endpoint");
-                }
+                },
             }
             
             println!("mapped: {} -> {}", og_id, _id );
