@@ -50,8 +50,13 @@ pub enum PkmnEnum {
     Pikachu = 25,
 }
 
+// INIT
 pub fn init_mapping(_endpoint:&str) -> /*HashMap<String,String>*/toml::Table {
-    let file_path=format!("../mappings/{}2id.toml",_endpoint);
+    let file_path=format!("mappings/{}2id.toml",_endpoint);
+    
+    #[cfg(debug_assertions)]
+    println!("mapping file: {}", &file_path);
+    
     let mut toml_object: toml::Table = Default::default();
     assert!(std::path::Path::new(file_path.as_str()).exists());
     

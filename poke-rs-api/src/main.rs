@@ -188,7 +188,8 @@ async fn pokeapi_endpoint(
 
     let file_name = format!("{}.json", _id2);
     // location to look for file
-    let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id2);
+    // Now should run at root
+    let file_name_location = format!("pokeapi-cache/{}/{}.json", _endpoint,_id2);
     #[cfg(debug_assertions)]
     {
         println!("file_name_location: {}", file_name_location);
