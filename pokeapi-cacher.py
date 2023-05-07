@@ -1,4 +1,5 @@
 # dl pokapi pokemon until it raises a 404
+import test.tests
 import os, shutil
 import time
 import requests
@@ -9,7 +10,7 @@ from random import randrange,uniform
 # global vars
 cache_location="pokeapi-cache" #files stored in this directory
 pokeapi_base_url="https://pokeapi.co/api/v2/"
-valid_endpoints=(\
+valid_endpoints=(
     "berry","berry-firmness", "berry-flavors"\
     "contest-type", "contest-effect", "super-contest-effect"\
     "encounter-methods", "encounter-condition", "encounter-condition-value"\
@@ -47,6 +48,18 @@ def init_parser(): # -> argparse.ArgumentParser
         '--pokemon',
         action="store_true",
         help="cache pokemon endpoint"
+    )
+    parser.add_argument(
+        '-e',
+        '--endpoint',
+        action="append", # allows option to be specified multiple times, store a list and append each arg value to list e.g. -e berry -e pokemon
+        help="endpoint to cache"
+    )
+    parser.add_argument(
+        '-t',
+        '--test',
+        action="store_true",
+        help="run tests"
     )
 
     return parser
@@ -104,7 +117,7 @@ def dl(args):
     endpoints = []
     
     session = req_cache.CachedSession('pokeapi-cache') # pokeapi-cache.sqlite
-    # create array from parsed args for endpoints that you wish to cache
+    # add endpoints users wants to cache,
     if args.berry   == True:
         pass
         endpoints.append("berry")
@@ -117,6 +130,24 @@ def dl(args):
         pass
         endpoints.append("pokemon")
     #fi
+
+    # if endpoints are added multiple times it should be skipped to prevent duplication(idempotent)
+    # endpoint = [a,b,c] arg=[a] -> break for a
+    for arg in args.endpoint:
+        # add if not duplicate
+        should_append=True
+        for already_present in endpoints:
+            # already present exit skip adding
+            if arg == already_present:
+                should_append=False
+                break
+            #fi
+        #rof
+        if should_append:
+            endpoints.append(arg)
+        else:
+            print("found duplicate skipping")
+    #rof
 
     # run caching for each endpoint
     for endpoint in endpoints:
@@ -131,7 +162,9 @@ def dl(args):
     #end
 #fed
 
-
+def tests():
+    print("running tests")
+#fed
 
 if __name__ == "__main__":
     # if not os.path.exists("pkmn"):
@@ -146,6 +179,11 @@ if __name__ == "__main__":
 
     parser = init_parser()
     args = parser.parse_args()
+    # run tests if wanted
+    if args.test == True:
+        test.tests.test_duplicate_args()
+        os._exit(0)
+    #fi
     print("dry_run: " + str(args.dry_run))
     dl(args)
 #end
