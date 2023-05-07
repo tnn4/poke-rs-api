@@ -40,10 +40,10 @@ use poke_rs_api::pkmn::Pokemon;
 
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone,Serialize, Deserialize)]
 struct AppState {
-    //pm: toml::Table,
-    m: HashMap<String,String>,
+    m: toml::Table,
+    //m: HashMap<String,String>,
 }
 
 static CONTENT_TYPE_TEXT_TOML: &'static str = "text/toml"; 
@@ -335,17 +335,19 @@ but set fire to him and he's warm for the rest of his life."
     - Terry Pratchett, Jingo"#
 }
 
-fn init_pokemap() -> HashMap<String,String>/*toml::Table*/ {
+fn init_pokemap() -> /*HashMap<String,String>*/toml::Table {
     let file_path="../poke2id.toml";
     let mut toml_object: toml::Table = Default::default();
     assert!(std::path::Path::new(file_path).exists());
     
     // open toml
     //let mut file=std::fs::File::open(file_path);
-    let contents = String::new();
-    if let contents=std::fs::read_to_string(file_path){
+    let mut contents = String::new();
+    // WARNING: the variable inside if let is a totally different variable
+    if let contents2=std::fs::read_to_string(file_path){
         println!("READ: success");
-        println!("{}", contents.unwrap());
+        // println!("{}", contents.unwrap());
+        contents = contents2.unwrap();
     } else {
         panic!("[ERROR]: can't read file");
     }
@@ -353,17 +355,20 @@ fn init_pokemap() -> HashMap<String,String>/*toml::Table*/ {
         //Ok(string) => string,
         //Err(err) => err,
     //};
-    let toml_object : HashMap<String, String> = toml::from_str(&contents).unwrap();
-    /*
-    if let toml_object = contents.parse::<toml::Table>().unwrap() {
+    println!("{}", contents);
+    // let toml_object : HashMap<String, String> = toml::from_str(&contents).unwrap();
+    
+    if let toml_object2 = contents.parse::<toml::Table>().unwrap() {
         println!("[OK]:POKEMAP initialized ");
+        toml_object=toml_object2;
     } else {
         panic!("[ERROR]: could not read mapping");
     }
-    */
+    
     // ERROR here
-    println!("{:?}", toml_object); // -> {}
-    assert_eq!(toml_object["bulbasaur"], "1".to_string());
+    println!("toml_object: {:?}", toml_object); // -> {}
+    // assert_eq!(toml_object["bulbasaur"], "1".to_string());
+    assert_eq!(toml_object["bulbasaur"], toml::Value::String("1".to_string()));
     println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
     // read it
     // then add it to dictionary
