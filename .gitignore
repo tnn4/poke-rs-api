@@ -3,7 +3,7 @@
 bin/
 target/
 notes/
-pokeapi-cache
+pokeapi-cache/
 __pycach__/
 
 # pokeapi endpoints 
