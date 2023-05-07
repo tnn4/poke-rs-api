@@ -1,3 +1,4 @@
+// poke_rs_api
 #![cfg_attr(debug_assertions, allow(unused_imports))]
 
 // use std::path::Path;
@@ -31,14 +32,19 @@ use toml::Table;
 use poke_rs_api::pkmn::Pokemon;
 use std::sync::Arc;
 
+// Stores state to pass between handlers, handlers can't take direct arguments without using them as closures
 #[derive(Clone,Serialize, Deserialize)]
 struct AppState {
-    m: toml::Table,
+    berry_m: toml::Table,
+    //move_m: toml::Table,
+    pokemon_m: toml::Table,
     //m: HashMap<String,String>,
 }
 
 static CONTENT_TYPE_TEXT_TOML: &'static str = "text/toml"; 
 static CONTENT_TYPE_AUDIO_OGG: &'static str = "audio/ogg";
+
+
 // const POKEMAP: toml::Table = init_pokemap();
 
 // main
@@ -47,7 +53,9 @@ async fn main() {
     // Shared State
     // See: https://docs.rs/axum/latest/axum/index.html#sharing-state-with-handlers
     let state = Arc::new(AppState {
-        m: poke_rs_api::pkmn::mapper::init_pokemap(),
+        berry_m: poke_rs_api::pkmn::mapper::init_mapping("berry"), // berry mappings
+        //move_m: poke_rs_api::pkmn::mapper::init_mapping("move"),
+        pokemon_m: poke_rs_api::pkmn::mapper::init_mapping("pokemon"),
     });
 
     // Defaults
@@ -92,7 +100,7 @@ async fn main() {
         .route("/", get(get_root))
         .route("/quote", get(return_quote))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
-        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_handler_for_id))
+        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_endpoint))
         // timeout at 30 seconds
         .layer(
             
@@ -105,9 +113,7 @@ async fn main() {
         // Shared State
         
     ;
-    
     let domain_all = "0.0.0.0";
-    
     // https://crates.io/crates/axum
     // run app
     let localhost = ([127,0,0,1],port);
@@ -131,7 +137,7 @@ async fn main() {
 // Pokeapi REST api
 // Have to allow request to take a string and map it to necessary id
 #[debug_handler]
-async fn pokeapi_handler_for_id(
+async fn pokeapi_endpoint(
         // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
         // State(state): State<std::sync::Arc<AppState>>,
         Extension(state): Extension<Arc<AppState>>,
@@ -145,6 +151,8 @@ async fn pokeapi_handler_for_id(
     let mut _id2=_id.clone();
     // let cache_location = String::from("pokeapi-cache")
 
+    // TODO Generalize this
+    // Works for pokemon only
     // Check to see if id can be parsed as a number if it can, use it directly
     // Else: map it to the pokemon
     match &_id.parse::<u64>() {
@@ -155,8 +163,23 @@ async fn pokeapi_handler_for_id(
             is_name=true;
             println!("Got request for name, instead of number");
             // FIX
-            // map name -> id
-            _id2 = state.m[&_id].clone().as_integer().expect("should be integer").to_string(); // ERROR here
+            // map( name -> id )
+            // Generalize this, this is brittle and non-scalable
+            match _endpoint.as_str() {
+                "berry" => {
+                    _id2 = state.berry_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                },
+                /*"move" => {
+                    _id2 = state.move_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                },
+                "pokemon" => {
+                    _id2 = state.pokemon_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                },*/
+                _ => {
+                    println!("invalid endpoint");
+                }
+            }
+            
             println!("mapped: {} -> {}", og_id, _id );
         }
     }
@@ -165,8 +188,6 @@ async fn pokeapi_handler_for_id(
 
     let file_name = format!("{}.json", _id2);
     // location to look for file
-    
-    
     let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id2);
     #[cfg(debug_assertions)]
     {
@@ -187,7 +208,7 @@ async fn pokeapi_handler_for_id(
     [
         (axum::http::header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
     ];
-
+    // Return packet
     Ok((headers, contents))
 }
 
@@ -208,13 +229,10 @@ async fn placeholder() -> &'static str{
     "you got placeholder"
 }
 
-
 // index
 async fn get_root() -> &'static str {
     "You got root"
 }
-
-
 
 async fn return_quote() -> &'static str {
     r#""Give a man a fire and he's warm for a day, 

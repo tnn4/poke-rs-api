@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
-// static mut id2monmap : HashMap<u64, &'static str> = HashMap::new();
-
+#[deprecated]
 pub struct Id2Pkmn {
     map: HashMap<u64, &'static str>,
 }
 
+#[deprecated]
 pub struct Poke2Id {
     map: HashMap<&'static str, u64>
 }
 
+#[deprecated]
 impl Poke2Id {
     pub fn new() -> Self {
         let mut m = Poke2Id {
@@ -19,6 +20,7 @@ impl Poke2Id {
     }
 }
 
+#[deprecated]
 pub fn create_mappings() -> Id2Pkmn {
     let mut m = Id2Pkmn{
         map: HashMap::new(), 
@@ -29,6 +31,7 @@ pub fn create_mappings() -> Id2Pkmn {
     m
 }
 
+#[deprecated]
 pub fn id2pkmn(m: Id2Pkmn, id: u64) -> &'static str{
     m.map[&id]    
 }
@@ -47,10 +50,10 @@ pub enum PkmnEnum {
     Pikachu = 25,
 }
 
-pub fn init_pokemap() -> /*HashMap<String,String>*/toml::Table {
-    let file_path="../poke2id.toml";
+pub fn init_mapping(_endpoint:&str) -> /*HashMap<String,String>*/toml::Table {
+    let file_path=format!("../mappings/{}2id.toml",_endpoint);
     let mut toml_object: toml::Table = Default::default();
-    assert!(std::path::Path::new(file_path).exists());
+    assert!(std::path::Path::new(file_path.as_str()).exists());
     
     // open toml
     //let mut file=std::fs::File::open(file_path);
@@ -77,14 +80,21 @@ pub fn init_pokemap() -> /*HashMap<String,String>*/toml::Table {
         panic!("[ERROR]: could not read mapping");
     }
     
-    // ERROR here
-    println!("toml_object: {:?}", toml_object); // -> {}
+    
+    #[cfg(debug_assertions)]
+    {
+        println!("toml_object: {:?}", toml_object); // -> {}
+    }
     // assert_eq!(toml_object["bulbasaur"], "1".to_string());
     // assert_eq!(toml_object["bulbasaur"], toml::Value::String("1".to_string()));
-    assert_eq!(toml_object["bulbasaur"], toml::Value::Integer(1));
-    println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
+
     // read it
     // then add it to dictionary
     // let mut poke2id: HashMap<String,String> = HashMap::new();
     toml_object
+}
+
+pub fn test() {
+    //assert_eq!(toml_object["bulbasaur"], toml::Value::Integer(1));
+    //println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
 }
