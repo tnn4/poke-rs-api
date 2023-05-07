@@ -9,7 +9,17 @@ from random import randrange,uniform
 # global vars
 cache_location="pokeapi-cache" #files stored in this directory
 pokeapi_base_url="https://pokeapi.co/api/v2/"
-
+valid_endpoints=(\
+    "berry","berry-firmness", "berry-flavors"\
+    "contest-type", "contest-effect", "super-contest-effect"\
+    "encounter-methods", "encounter-condition", "encounter-condition-value"\
+    "evolution-chain", "evolution-trigger"\
+    "generation", "pokedex", "version", "version-group"\
+    "item", "item-attribute", "item-category", "item-fling-effect", "item-pocket"\
+    "location", "location-area", "pal-park-area", "region"\
+    "machine"\
+    "ability", "characteristic", "gender", "growth-rate", "nature", "pokeathlon-stat", "pokemon", "pokemon-location-area", "pokemon-color", "pokemon-form", "pokemon-habitat", "pokemon-shape", "pokemon-species", "stat", "type"\
+)
 
 # initializer argument parser for CLI
 def init_parser(): # -> argparse.ArgumentParser
@@ -140,22 +150,22 @@ if __name__ == "__main__":
     dl(args)
 #end
 
-    # endpoints:
-    # berries
-    # - berry,berry-firmness, berry-flavors
-    # contests
-    # - contest-type, contest-effect, super-contest-effect
-    # encounters
-    # - encounter-methods, encounter-condition, encounter-condition-value
-    # evolution
-    # - evolution-chain, evolution-trigger
-    # games
-    # - generation, pokedex, version, version-group
-    # items
-    # - item, item-attribute, item-category, item-fling-effect, item-pocket
-    # locations
-    # - location, location-area, pal-park-area, region
-    # machines
-    # - machine
-    # pokemon
-    # - ability, characteristic, gender, growth-rate, nature, pokeathlon-stat, pokemon, pokemon-location-area, pokemon-color, pokemon-form, pokemon-habitat, pokemon-shape, pokemon-species, stat, type
+# Available endpoints:
+# berries
+# - berry,berry-firmness, berry-flavors
+# contests
+# - contest-type, contest-effect, super-contest-effect
+# encounters
+# - encounter-methods, encounter-condition, encounter-condition-value
+# evolution
+# - evolution-chain, evolution-trigger
+# games
+# - generation, pokedex, version, version-group
+# items
+# - item, item-attribute, item-category, item-fling-effect, item-pocket
+# locations
+# - location, location-area, pal-park-area, region
+# machines
+# - machine
+# pokemon
+# - ability, characteristic, gender, growth-rate, nature, pokeathlon-stat, pokemon, pokemon-location-area, pokemon-color, pokemon-form, pokemon-habitat, pokemon-shape, pokemon-species, stat, type
