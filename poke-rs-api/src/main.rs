@@ -1,5 +1,7 @@
 #![cfg_attr(debug_assertions, allow(unused_imports))]
 
+// use std::path::Path;
+
 use axum_macros::debug_handler;
 
 // command line arguments
@@ -16,7 +18,7 @@ use std::time::Duration;
 use std::net::SocketAddr;
 use axum::{
     body::StreamBody, // return files dynamically
-    extract::{Query, Path},
+    extract::{Query, Path, State, Extension},
     headers::{Header},
     routing::{get, post},
     http::{Request,StatusCode, Uri, header::{self, HeaderMap, HeaderName}},
@@ -32,23 +34,36 @@ use serde_derive::{Deserialize, Serialize};
 
 // read from toml
 use toml;
+use toml::Table;
 
 use poke_rs_api::pkmn::Pokemon;
 
-// Command line arguments
-#[derive(Parser, Debug)]
-struct Args {
+use std::sync::Arc;
 
+#[derive(Clone)]
+struct AppState {
+    //pm: toml::Table,
+    m: HashMap<String,String>,
 }
 
 static CONTENT_TYPE_TEXT_TOML: &'static str = "text/toml"; 
 static CONTENT_TYPE_AUDIO_OGG: &'static str = "audio/ogg";
+// const POKEMAP: toml::Table = init_pokemap();
 
+// main
 #[tokio::main]
 async fn main() {
+    // Shared State
+    // See: https://docs.rs/axum/latest/axum/index.html#sharing-state-with-handlers
+    let state = Arc::new(AppState {
+        m: init_pokemap(),
+    });
+
+    // Defaults
     let mut port : u16 = 3001;
     let mut requests_before_limit : u64 = 5;
     let mut max_requests_before_backpressure : usize = 100;
+    
     // collect command line arguments
     //let args: Vec<String> = env::args().collect();
     let cmd_arg_matches = clap::Command::new("poke-rs-api")
@@ -62,6 +77,7 @@ async fn main() {
         )
         .get_matches();
     
+    // Let user use a custom port
     if let Some(p) = cmd_arg_matches.get_one::<String>("port") {
         
         match p.parse::<u16>() {
@@ -104,26 +120,16 @@ async fn main() {
         .nest("/pokeapi/v2/", pkmn_route.clone())
     ;
 
-    // Pokeapi/v2 Route
-    let pokeapi_route: axum::Router=Router::new()
-        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_route_handler));
-
-    // Generate App
+    // Generate ROUTES
     let app = Router::new()
         // `GET -> /`
+        //.with_state(state)
         .route("/:id", get_id_route.clone())
         .route("/", get(get_root))
-        .route("/", post(post_default))
-        .route("/id", get(get_read))
         .route("/quote", get(return_quote))
-        .route("/todos", get(get_todos))
         .route("/toml", get(return_toml_handler))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
-        .route("/pokeapi", get(placeholder))
-        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_route_handler))
-        //.nest("/pokeapi/v2", berry_route)
-        //.nest("/pokeapi/v2", move_route)
-        //.nest("/pokeapi/v2", pkmn_route)
+        .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_handler_for_id))
         // timeout at 30 seconds
         .layer(
             
@@ -132,6 +138,9 @@ async fn main() {
                 // `cargo add tower --features timeout`
                 .timeout(std::time::Duration::from_secs(30))
         )
+        .layer(Extension(state))
+        // Shared State
+        
     ;
     
     let domain_all = "0.0.0.0";
@@ -151,25 +160,61 @@ async fn main() {
         .unwrap();
     //let listener = tokio::net::TcpListener::bind(format!("{}:{}",domain_all,port));
     //axum::serve(listener, app).await.unwrap();
+    
 }
 // end-main
 
-async fn pokeapi_route_handler(
-    // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
-    axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,u32)>,)
+// Handlers
+// Pokeapi REST api
+// Have to allow request to take a string and map it to necessary id
+#[debug_handler]
+async fn pokeapi_handler_for_id(
+        // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
+        // State(state): State<std::sync::Arc<AppState>>,
+        Extension(state): Extension<Arc<AppState>>,
+        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,
+        
+        
+    )
     // axum::extract::Path(_id): axum::extract::Path<u32>) 
     -> Result<impl IntoResponse, StatusCode>{
     
+    let mut is_string = false;
+    let og_id=&_id;
+    // let cache_location = String::from("pokeapi-cache")
+
+    // Check to see if id can be parsed as a number if it can, use it directly
+    // Else: map it to the pokemon
+    match &_id.parse::<u64>() {
+        Ok(num) => { println!("Could parse as number")},
+        Err(err) => {
+            // map to pokemon
+            println!("Not a number.");
+            is_string=true;
+        }
+    }
+    
+    if is_string {
+        
+        println!("Got request for pokemon, instead of number");
+        // map name -> id
+        let _id = &state.m[&_id]; // ERROR here
+        println!("mapped: {} -> {}", og_id, _id );
+    }
+
     println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id );
 
     let file_name = format!("{}.json", _id);
     // location to look for file
-    let file_name_location = format!("../{}/{}.json", _endpoint,_id);
+    let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id);
 
+    // Read json file to string and use as packet Body
     let contents = match fs::read_to_string(file_name_location) {
         Ok(string) => string,
         Err(err) => err.to_string(),
     };
+
+    // Packet Headers
     let headers = 
     [
         (axum::http::header::CONTENT_TYPE, "text/json; charset=utf-8".to_string()),
@@ -243,30 +288,6 @@ async fn get_id(Path(id): Path<u32>) -> String {
     id.to_string()
 }
 
-// create
-async fn post_default() -> &'static str {
-    "endpoint: create placeholder"
-}
-
-// get read
-async fn get_read() -> &'static str {
-    "endpoint: get_read"
-}
-
-// update
-async fn put_id() -> &'static str {
-    "endpoint: update placeholder"
-}
-
-// destroy
-async fn delete_id() -> &'static str {
-    "endpoint: delete placedholder"
-}
-
-async fn get_todos() -> &'static str {
-    "endpoint: todos placeholder"
-}
-
 // extract data from url, i.e. extract query
 
 #[derive(Deserialize)]
@@ -312,4 +333,40 @@ async fn return_quote() -> &'static str {
     r#""Give a man a fire and he's warm for a day, 
 but set fire to him and he's warm for the rest of his life."
     - Terry Pratchett, Jingo"#
+}
+
+fn init_pokemap() -> HashMap<String,String>/*toml::Table*/ {
+    let file_path="../poke2id.toml";
+    let mut toml_object: toml::Table = Default::default();
+    assert!(std::path::Path::new(file_path).exists());
+    
+    // open toml
+    //let mut file=std::fs::File::open(file_path);
+    let contents = String::new();
+    if let contents=std::fs::read_to_string(file_path){
+        println!("READ: success");
+        println!("{}", contents.unwrap());
+    } else {
+        panic!("[ERROR]: can't read file");
+    }
+    //match std::fs::read_to_string(&mut toml) {
+        //Ok(string) => string,
+        //Err(err) => err,
+    //};
+    let toml_object : HashMap<String, String> = toml::from_str(&contents).unwrap();
+    /*
+    if let toml_object = contents.parse::<toml::Table>().unwrap() {
+        println!("[OK]:POKEMAP initialized ");
+    } else {
+        panic!("[ERROR]: could not read mapping");
+    }
+    */
+    // ERROR here
+    println!("{:?}", toml_object); // -> {}
+    assert_eq!(toml_object["bulbasaur"], "1".to_string());
+    println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
+    // read it
+    // then add it to dictionary
+    // let mut poke2id: HashMap<String,String> = HashMap::new();
+    toml_object
 }
