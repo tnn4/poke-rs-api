@@ -206,8 +206,17 @@ async fn pokeapi_handler_for_id(
 
     let file_name = format!("{}.json", _id);
     // location to look for file
+    
+    
     let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id);
-
+    #[cfg(debug_assertions)]
+    {
+        println!("file_name_location: {}", file_name_location);
+        if !std::path::Path::exists(std::path::Path::new(&file_name_location)) {
+            println!("[ERROR]: File not found");
+        }
+    }
+    
     // Read json file to string and use as packet Body
     let contents = match fs::read_to_string(file_name_location) {
         Ok(string) => string,
@@ -368,7 +377,8 @@ fn init_pokemap() -> /*HashMap<String,String>*/toml::Table {
     // ERROR here
     println!("toml_object: {:?}", toml_object); // -> {}
     // assert_eq!(toml_object["bulbasaur"], "1".to_string());
-    assert_eq!(toml_object["bulbasaur"], toml::Value::String("1".to_string()));
+    // assert_eq!(toml_object["bulbasaur"], toml::Value::String("1".to_string()));
+    assert_eq!(toml_object["bulbasaur"], toml::Value::Integer(1));
     println!("toml[bulbasaur]: {}", toml_object["bulbasaur"]);
     // read it
     // then add it to dictionary
