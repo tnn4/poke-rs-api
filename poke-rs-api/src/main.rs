@@ -181,7 +181,7 @@ async fn pokeapi_handler_for_id(
     
     let mut is_name = false;
     let og_id=&_id;
-    let mut _id2=&_id;
+    let mut _id2=_id.clone();
     // let cache_location = String::from("pokeapi-cache")
 
     // Check to see if id can be parsed as a number if it can, use it directly
@@ -192,17 +192,12 @@ async fn pokeapi_handler_for_id(
             // map to pokemon
             println!("Not a number.");
             is_name=true;
+            println!("Got request for name, instead of number");
+            // FIX
+            // map name -> id
+            _id2 = state.m[&_id].clone().as_integer().expect("should be integer").to_string(); // ERROR here
+            println!("mapped: {} -> {}", og_id, _id );
         }
-    }
-    
-    // map name -> id
-    if is_name {
-        
-        println!("Got request for name, instead of number");
-        // map name -> id
-        _id2 = state.m[&_id].clone().try_into().unwrap(); // ERROR here
-        println!("mapped: {} -> {}", og_id, _id );
-        
     }
 
     println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id2 );
