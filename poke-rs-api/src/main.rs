@@ -179,8 +179,9 @@ async fn pokeapi_handler_for_id(
     // axum::extract::Path(_id): axum::extract::Path<u32>) 
     -> Result<impl IntoResponse, StatusCode>{
     
-    let mut is_string = false;
+    let mut is_name = false;
     let og_id=&_id;
+    let mut _id2=&_id;
     // let cache_location = String::from("pokeapi-cache")
 
     // Check to see if id can be parsed as a number if it can, use it directly
@@ -190,25 +191,27 @@ async fn pokeapi_handler_for_id(
         Err(err) => {
             // map to pokemon
             println!("Not a number.");
-            is_string=true;
+            is_name=true;
         }
     }
     
-    if is_string {
+    // map name -> id
+    if is_name {
         
-        println!("Got request for pokemon, instead of number");
+        println!("Got request for name, instead of number");
         // map name -> id
-        let _id = &state.m[&_id]; // ERROR here
+        _id2 = state.m[&_id].clone().try_into().unwrap(); // ERROR here
         println!("mapped: {} -> {}", og_id, _id );
+        
     }
 
-    println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id );
+    println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id2 );
 
-    let file_name = format!("{}.json", _id);
+    let file_name = format!("{}.json", _id2);
     // location to look for file
     
     
-    let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id);
+    let file_name_location = format!("../pokeapi-cache/{}/{}.json", _endpoint,_id2);
     #[cfg(debug_assertions)]
     {
         println!("file_name_location: {}", file_name_location);
