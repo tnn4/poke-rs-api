@@ -1,7 +1,12 @@
 # Poke-rs API
 
 Requires:
-- python
+- [python](https://www.python.org/downloads/)
+- [rust](https://www.rust-lang.org/tools/install) (if developing)
+
+This is a [Pokeapi](https://pokeapi.co/) mirror that can be used to serve a subset of the api using Rust Axum backend(hence the name). This was built as an education experience and also serves as a performant tool for backend development and testing REST apis. 
+
+If you're wondering why this does't serve all endpoints, it's because, the primary goal of this app is optimization and performance. Data has to be cached and hashed first to make lookups fast, and serving a subset of the data is required if working on constrained resources.
 
 ## Directory Structure
 Directory | Description
@@ -10,11 +15,9 @@ Directory | Description
 |poke-rs-api | source code for rust backend
 
 
-Thi is a [Pokeapi](https://pokeapi.co/) mirror that serves static JSON with a Rust Axum backend(hence the name), so it should be performant. This was built as an education experience and also serves as useful tool for local backend developing and testing REST apis.
-
 ## Quick Start
 
-You need to populate your cache so the server can use the data to serve the local REST api.
+You need to populate your cache so the server can use the cached data to serve the REST api.
 
 Download and cache the endpoints you want to use with the python script `pokeapi-cacher.py`.
 
@@ -25,7 +28,7 @@ e.g. Download cache all files from endpoints: pokemon, berry, move, See: [here](
 
 
 ```sh
-$ python pokeapi-cacher.py --pokemon --berry --move
+$ python pokeapi-cacher.py --endpoint pokemon --endpoint berry --endpoint move
 ```
 
 Once the files are cached to `pokeapi-cache` you can serve them with the provided backend.
@@ -39,10 +42,16 @@ and will serve endpoints like `http://localhost:3000/pokeapi/pokemon/0`
 
 Available Endpoints
 
-Endpoint | Description | Example URL
-|---|---|---
-move | pokemon move data | http://localhost/pokeapi/v2/move/1
-pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1
+These are the endpoints that the backend can serve. You can always extend the source to add more.
+
+Endpoints that can be retrieved by name means you can pass a name for the item instead of a number: e.g. `http://localhost/pokeapi/v2/pokemon/25` can be retrieved with `http://localhost/pokeapi/v2/pokemon/pikachu`
+
+
+Endpoint | Description | Example URL | retrieve by name
+|---|---|---|---
+berry | berry data | http://localhost/pokeapi/v2/berry/1 | yes
+move | pokemon moves | http://localhost/pokeapi/v2/1 | no
+pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1 | yes
 
 
 ---
