@@ -62,6 +62,7 @@ async fn main() {
     let mut port : u16 = 3001;
     let mut requests_before_limit : u64 = 5;
     let mut max_requests_before_backpressure : usize = 100;
+    let mut docker_mode: bool = false;
     
     // collect command line arguments
     //let args: Vec<String> = env::args().collect();
@@ -73,6 +74,13 @@ async fn main() {
             .action(clap::ArgAction::Set)
             .value_name("PORT")
             .help("Set port for server to listen on")
+        )
+        .arg(
+            clap::Arg::new("docker")
+            .short('d')
+            .long("docker")
+            .action(clap::ArgAction::SetTrue)
+            .help("Turn on docker compatibility mode")
         )
         .get_matches();
     
@@ -86,6 +94,12 @@ async fn main() {
         println!("Value for port is now: {}", port);
     }
     
+    if let Some(d) = cmd_arg_matches.get_one::<bool>("docker") {
+        if *d == true {
+            docker_mode = true;
+            println!("enabled docker mode");
+        }
+    }
     // Logging
     //tracing_subscriber::fmt::init()
     tracing_subscriber::fmt()
@@ -117,9 +131,14 @@ async fn main() {
     // https://crates.io/crates/axum
     // run app
     let localhost = ([127,0,0,1],port);
-    let socket_all = ([0,0,0,0], port);
+    let listen_all = ([0,0,0,0], port);
+    let mut listen_address = localhost;
     
-    let addr = SocketAddr::from(localhost);
+    if docker_mode {
+        listen_address=listen_all;
+    }
+    
+    let addr = SocketAddr::from(listen_address);
     
     tracing::debug!("listening on {}", addr);
     println!("listening on {}", addr);

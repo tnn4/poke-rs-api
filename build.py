@@ -13,7 +13,7 @@ def init_parser(): # -> argparse.ArgumentParser
         help="show command"
     )
     parser.add_argument(
-        '-bd',
+        '-b',
         '--build-dev',
         action="store_true",
         help="build debug version"
@@ -25,7 +25,7 @@ def init_parser(): # -> argparse.ArgumentParser
         help="build release version"
     )
     parser.add_argument(
-        '-rd',
+        '-r',
         '--run-dev',
         action="store_true",
         help="run debug version"
@@ -49,19 +49,19 @@ def init_parser(): # -> argparse.ArgumentParser
 cargo_path="poke-rs-api/"
 cargo_file="Cargo.toml"
 # Debug builds are the default for cargo.
-cmd_str_bd="cargo build --manifest-path " + cargo_path + cargo_file
+cmd_str_b="cargo build --manifest-path " + cargo_path + cargo_file
 cmd_str_br="cargo build --manifest-path " + cargo_path + cargo_file + " --release"
-cmd_str_rd="cargo run --manifest-path " + cargo_path + cargo_file
+cmd_str_r="cargo run --manifest-path " + cargo_path + cargo_file
 cmd_str_rr="cargo run --manifest-path " + cargo_path + cargo_file + " --release"
 
 def run_cargo(option):
     match option:
         case "b":
-            subprocess.run(cmd_str_bd, shell=True)
+            subprocess.run(cmd_str_b, shell=True)
         case "br":
             subprocess.run(cmd_str_br, shell=True)
         case "r":
-            subprocess.run(cmd_str_rd, shell=True)
+            subprocess.run(cmd_str_r, shell=True)
         case "rr":
             subprocess.run(cmd_str_rr, shell=True)
         case _:

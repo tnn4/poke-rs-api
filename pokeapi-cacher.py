@@ -67,7 +67,12 @@ def init_parser(): # -> argparse.ArgumentParser
         action="store_true",
         help="list available pokeapi endpoints"
     )
-
+    parser.add_argument(
+        '-s',
+        '--store-example',
+        action="store",
+        help="store example"
+    )
     return parser
 #fed
 
