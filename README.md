@@ -48,10 +48,12 @@ $ bin/poke-rs-api --port <your-port>
 
 Manually:
 
-Build image:
+Build image: 
 - `docker build -t poke-rs-api -f Dockerfile-main .`
+
 Run container from image:
 - `docker run --name my_container_name -p 3001:3001 poke-rs-api`
+
 Delete image:
 - `docker rm my_container_name`
 
@@ -59,7 +61,7 @@ Or use the script - `./docker-build.sh`
 
 - If you want to change the port in docker: change the line at `CMD` in the `Dockerfile-main` to something like:
 
-`Dockerfile-main`
+
 ```dockerfile
 CMD ["bin/poke-rs-api","--docker", "--port", "<your-port>"]
 ```
@@ -119,7 +121,7 @@ and will serve endpoints like `http://localhost:3000/pokeapi/pokemon/0`
 
 ---
 
-## Build with docker container
+## Docker reference
 If you have Docker and have available memory and disk space, use the provided `Dockerfile` to do all the work for you.
 
 [Important: Build the cache first](#populate-cache)
@@ -146,8 +148,6 @@ REPOSITORY                       TAG             IMAGE ID       CREATED         
 tnn4/poke-rs-api                 v0.1.0          ae5528709935   23 minutes ago   87.9MB
 
 ```
-
-
 
 
 ### Available Endpoints
