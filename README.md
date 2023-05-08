@@ -25,6 +25,25 @@ Directory | Description
 |pokeapi-cache | static json files for serving
 |poke-rs-api | source code for rust backend
 
+# Quick Start
+1. Download the release
+2. Download the source, go to the root of the project
+3. drop the binary into the `bin` folder
+4. Run it with: `$ ./bin/poke-rs-api`
+
+The server should be listening on localhost:3001.
+
+## Serving the API over the Internet
+
+The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html)  to forward requests to localhost and serve data over the internet securely.
+
+The default port is `3001` but can be changed with an argument when running the server.
+
+```bash
+$ bin/poke-rs-api --port <your-port>
+```
+
+# Development
 ---
 
 ## Populate Cache
@@ -83,16 +102,25 @@ $ docker build . # don't forget the dot(.)
 
 If you want to use a custom dockerfile name do:
 - `$ docker build <path-to-dockerfile> <path-to-context>`
+In this case something like:
+- `$ docker build -f yourDockerfile .`
 
 If you want to give your image a name, you'll have to put it from the command line [src](https://stackoverflow.com/questions/38986057/how-to-set-image-name-in-dockerfile). Dockerfiles don't support tagging.
 - `$ docker build -t me/myapp:tag -f <path-to-dockerfile> <path-to-context>`
 - e.g. `$ docker build -t me/poke-rs-api:v0.1.0 -f mydockerfile .`
 
-In this case something like:
-- `$ docker build -f yourDockerfile .`
 
-Run `docker image` to find the built image
+Run `docker images` to find the built image
 The build command should have given an Image ID like: `ae5528709935...`
+```
+0:[t@serv2:pokeapi]> docker images
+REPOSITORY                       TAG             IMAGE ID       CREATED          SIZE
+tnn4/poke-rs-api                 v0.1.0          ae5528709935   23 minutes ago   87.9MB
+
+```
+
+
+
 
 ### Available Endpoints
 
@@ -110,15 +138,7 @@ pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1 | yes
 
 ---
 
-## Serving the API over the Internet
 
-The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html)  to forward requests to localhost and serve data over the internet securely.
-
-The default port is `3001` but can be changed with an argument when running the server.
-
-```bash
-$ bin/poke-rs-api --port <your-port>
-```
 
 Nginx example conf in `/etc/nginx/nginx.conf`:
 
