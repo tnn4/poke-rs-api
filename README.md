@@ -29,8 +29,9 @@ Directory | Description
 
 1. Download the release [here]()
 2. Download the source, go to the root of the project
-3. drop the binary into the `bin` folder
-4. Run it with: `$ ./bin/poke-rs-api`
+3. Create a `bin` folder
+4. drop the binary into the `bin` folder
+5. Run it with: `$ ./bin/poke-rs-api`
     - If you want to use a different port `$./bin/poke-rs-api --port <your-port>`
     
 
