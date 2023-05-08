@@ -26,22 +26,50 @@ Directory | Description
 |poke-rs-api | source code for rust backend
 
 # Quick Start
-1. Download the release
+
+1. Download the release [here]()
 2. Download the source, go to the root of the project
 3. drop the binary into the `bin` folder
 4. Run it with: `$ ./bin/poke-rs-api`
+    - If you want to use a different port `$./bin/poke-rs-api --port <your-port>`
+    
 
-The server should be listening on localhost:3001.
-
-## Serving the API over the Internet
-
-The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html)  to forward requests to localhost and serve data over the internet securely.
+The server should be listening on `http://localhost:3001` on local mode and `http://0.0.0.0:3001` on docker mode.
 
 The default port is `3001` but can be changed with an argument when running the server.
 
+e.g.
 ```bash
 $ bin/poke-rs-api --port <your-port>
 ```
+
+## With docker
+
+
+Manually:
+
+Build image:
+- `docker build -t poke-rs-api -f Dockerfile-main .`
+Run container from image:
+- `docker run --name my_container_name -p 3001:3001 poke-rs-api`
+Delete image:
+- `docker rm my_container_name`
+
+Or use the script - `./docker-build.sh`
+
+- If you want to change the port in docker: change the line at `CMD` in the `Dockerfile-main` to something like:
+
+`Dockerfile-main`
+```dockerfile
+CMD ["bin/poke-rs-api","--docker", "--port", "<your-port>"]
+```
+
+## Serving the API over the Internet
+
+The server listens on `localhost:<port>` and serves JSON for the request at its endpoint at `http://localhost:<port>/pokeapi/v2/<endpoint>/<id>` so this has to be combined with a reverse proxy like [Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), or [Apache proxy server](https://httpd.apache.org/docs/2.4/howto/reverse_proxy.html)  to forward requests to localhost and serve data over the internet securely. 
+- [nginx example configuration](#nginx-example)
+
+
 
 # Development
 ---
@@ -139,6 +167,7 @@ pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1 | yes
 ---
 
 
+### Nginx example
 
 Nginx example conf in `/etc/nginx/nginx.conf`:
 
