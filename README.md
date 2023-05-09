@@ -1,9 +1,11 @@
 # Pkmn API
 
-[![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
-![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
+[![Rust](https://img.shields.io/badge/language-Rust-blue)](https://www.rust-lang.org/)
+[![Python](https://img.shields.io/badge/language-Python-blue)](https://www.python.org/)
+![bash](https://img.shields.io/badge/language-bash-blue)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 
 TODO
 - Dockerize/containerize
