@@ -8,8 +8,8 @@
 
 
 TODO
-- Dockerize/containerize
-- Add nginx to docker-compose
+- add in-memory cache to speed performance: [moka](https://crates.io/crates/moka)
+
 
 Compatibility: This was developed and tested on Ubuntu 22.04. This app should work on most Linux platforms and WSL2 if you're feeling adventurous. 
 You can always Dockerize/containerize it to make it more portable.
@@ -50,6 +50,38 @@ e.g.
 ```bash
 $ bin/poke-rs-api --port <your-port>
 ```
+
+# Populate image cache
+Download assets from: https://github.com/HybridShivam/Pokemon
+- Take the `images` and `thumbnails` folder and drop it into the `assets` directory
+```sh
+# PROJECT ROOT
+...
+assets
+    |-- images (assets/images)
+    |-- thumbnails (assets/thumbnails)
+...
+```
+
+---
+
+## Available Endpoints
+
+These are the endpoints that the backend can serve. You can always extend the source to add more.
+
+Endpoints that can be retrieved by name means you can pass a name for the item instead of a number: e.g. `http://localhost/pokeapi/v2/pokemon/25` can be retrieved with `http://localhost/pokeapi/v2/pokemon/pikachu`
+
+
+Endpoint | Description | Example URL | retrieve by name
+|---|---|---|---
+berry | berry data | http://localhost:3001/pokeapi/v2/berry/1 | yes
+move | pokemon moves | http://localhost:3001/pokeapi/v2/move/1 | no
+pokemon | pokemon information | http://localhost:3001/pokeapi/v2/pokemon/1 | yes
+pokeimg | pokemon images | http://localhost:3001/api/pokeimg/images/001 | not yet
+pokeimg-thumbnail | pokemon image thumbnails | http://localhost:3001/api/pokeimg/thumbnails/001
+
+---
+
 
 ## With docker
 
@@ -156,24 +188,6 @@ REPOSITORY                       TAG             IMAGE ID       CREATED         
 tnn4/poke-rs-api                 v0.1.0          ae5528709935   23 minutes ago   87.9MB
 
 ```
-
-
-### Available Endpoints
-
-These are the endpoints that the backend can serve. You can always extend the source to add more.
-
-Endpoints that can be retrieved by name means you can pass a name for the item instead of a number: e.g. `http://localhost/pokeapi/v2/pokemon/25` can be retrieved with `http://localhost/pokeapi/v2/pokemon/pikachu`
-
-
-Endpoint | Description | Example URL | retrieve by name
-|---|---|---|---
-berry | berry data | http://localhost/pokeapi/v2/berry/1 | yes
-move | pokemon moves | http://localhost/pokeapi/v2/move/1 | no
-pokemon | pokemon information | http://localhost/pokeapi/v2/pokemon/1 | yes
-
-
----
-
 
 ### Nginx example
 

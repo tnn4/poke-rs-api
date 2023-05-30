@@ -3,6 +3,9 @@
 
 // use std::path::Path;
 
+use std::io::{Read, BufReader,};
+use std::fs::File;
+
 use axum_macros::debug_handler;
 // command line arguments
 use clap::Parser;
@@ -52,7 +55,9 @@ static CONTENT_TYPE_AUDIO_OGG: &'static str = "audio/ogg";
 async fn main() {
     // Shared State
     // See: https://docs.rs/axum/latest/axum/index.html#sharing-state-with-handlers
-    let state = Arc::new(AppState {
+
+    // Holds state of mappings
+    let state_of_mappings = Arc::new(AppState {
         berry_m: poke_rs_api::pkmn::mapper::init_mapping("berry"), // berry mappings
         //move_m: poke_rs_api::pkmn::mapper::init_mapping("move"),
         pokemon_m: poke_rs_api::pkmn::mapper::init_mapping("pokemon"),
@@ -64,7 +69,7 @@ async fn main() {
     let mut max_requests_before_backpressure : usize = 100;
     let mut docker_mode: bool = false;
     
-    // collect command line arguments
+    // COMMAND LINE ARGS
     //let args: Vec<String> = env::args().collect();
     let cmd_arg_matches = clap::Command::new("poke-rs-api")
         .arg(
@@ -100,13 +105,16 @@ async fn main() {
             println!("enabled docker mode");
         }
     }
-    // Logging
+    // COMMAND LINE ARGS
+
+    // LOGGING
     //tracing_subscriber::fmt::init()
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
+    // LOGGING
 
-    // Generate ROUTES
+    //  ROUTES
     let app = Router::new()
         // `GET -> /`
         //.with_state(state)
@@ -115,6 +123,7 @@ async fn main() {
         .route("/quote", get(return_quote))
         .route("/nanoid", get(poke_rs_api::util::get_nanoid))
         .route("/pokeapi/v2/:_endpoint/:_id", get(pokeapi_endpoint))
+        .route("/api/pokeimg/:_endpoint/:_id", get(pokeimg_handler))
         // timeout at 30 seconds
         .layer(
             
@@ -123,10 +132,14 @@ async fn main() {
                 // `cargo add tower --features timeout`
                 .timeout(std::time::Duration::from_secs(30))
         )
-        .layer(Extension(state))
+        .layer(Extension(state_of_mappings))
         // Shared State
         
     ;
+    // ROUTES 
+
+
+    // IP ADDRESSES
     let domain_all = "0.0.0.0";
     // https://crates.io/crates/axum
     // run app
@@ -150,24 +163,23 @@ async fn main() {
     //axum::serve(listener, app).await.unwrap();
     
 }
-// end-main
+// MAIN END
 
-// Handlers
+// HANDLERS
+
 // Pokeapi REST api
-// Have to allow request to take a string and map it to necessary id
+// Have to allow request to take a Pokemon name and map it to necessary id
 #[debug_handler]
 async fn pokeapi_endpoint(
         // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
         // State(state): State<std::sync::Arc<AppState>>,
-        Extension(state): Extension<Arc<AppState>>,
-        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,    
-    )
-    // axum::extract::Path(_id): axum::extract::Path<u32>) 
-    -> Result<impl IntoResponse, StatusCode>{
-    
+        Extension(state_of_mappings): Extension<Arc<AppState>>,
+        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,) -> Result<impl IntoResponse, StatusCode>{
+    // START FUNCTION
     let mut is_name = false;
     let og_id=&_id;
     let mut _id2=_id.clone();
+
     // let cache_location = String::from("pokeapi-cache")
 
     // TODO Generalize this
@@ -186,13 +198,13 @@ async fn pokeapi_endpoint(
             // Generalize this, this is brittle and non-scalable
             match _endpoint.as_str() {
                 "berry" => {
-                    _id2 = state.berry_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                    _id2 = state_of_mappings.berry_m[&_id].clone().as_integer().expect("should be integer").to_string();
                 },
                 /*"move" => {
                     _id2 = state.move_m[&_id].clone().as_integer().expect("should be integer").to_string();
                 },*/
                 "pokemon" => {
-                    _id2 = state.pokemon_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                    _id2 = state_of_mappings.pokemon_m[&_id].clone().as_integer().expect("should be integer").to_string();
                 },
                 _ => {
                     println!("invalid endpoint");
@@ -258,4 +270,104 @@ async fn return_quote() -> &'static str {
     r#""Give a man a fire and he's warm for a day, 
 but set fire to him and he's warm for the rest of his life."
     - Terry Pratchett, Jingo"#
+}
+
+#[debug_handler]
+async fn pokeimg_handler(
+        // Note that multiple parametres must be extracted with a tuple Path<(_,_)>
+        // State(state): State<std::sync::Arc<AppState>>,
+        Extension(state_of_mappings): Extension<Arc<AppState>>,
+        axum::extract::Path((_endpoint,_id)): axum::extract::Path<(String,String)>,) -> Result<impl IntoResponse, StatusCode>{
+    // START FUNCTION
+    let mut is_name = false;
+    let og_id=&_id;
+    let mut _id2=_id.clone();
+
+    // let cache_location = String::from("pokeapi-cache")
+
+    // TODO Generalize this
+    // Works for pokemon only
+    // Check to see if id can be parsed as a number if it can, use it directly
+    // Else: map it to the pokemon
+    match &_id.parse::<u64>() {
+        Ok(num) => { println!("Could parse as number")},
+        Err(err) => {
+            // map to pokemon
+            println!("Not a number.");
+            is_name=true;
+            println!("Got request for name, instead of number");
+            // FIX
+            // map( name -> id )
+            // Generalize this, this is brittle and non-scalable
+            match _endpoint.as_str() {
+                "berry" => {
+                    _id2 = state_of_mappings.berry_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                    println!("_id2: {}", _id2);
+                },
+                /*"move" => {
+                    _id2 = state.move_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                },*/
+                "pokemon" => {
+                    _id2 = state_of_mappings.pokemon_m[&_id].clone().as_integer().expect("should be integer").to_string();
+                    println!("_id2: {}", _id2);
+
+                },
+                _ => {
+                    println!("invalid endpoint");
+                },
+            }
+            
+            println!("mapped: {} -> {}", og_id, _id );
+        }
+    }
+
+    println!("attempting to get pokeapi/v2: {}/{}", _endpoint, _id2 );
+
+    let file_name = format!("{}.png", _id2);
+    // location to look for file
+    // Now should run at root
+    let file2get = format!("assets/{}/{}.png", _endpoint, _id2);
+    #[cfg(debug_assertions)]
+    {
+        println!("file_name_location: {}", file2get);
+        if !std::path::Path::exists(std::path::Path::new(&file2get)) {
+            println!("[ERROR]: File not found");
+        }
+    }
+    
+    /*
+    // Read json file to string and use as packet Body
+    let contents = match fs::read_to_string(file_name_location) {
+        Ok(string) => string,
+        Err(err) => err.to_string(),
+    };
+    */
+    // Repetitive file IO is inefficient, how to improve?
+    
+    // https://doc.rust-lang.org/std/io/struct.BufReader.html
+    // BufReader<R> can improve the speed of programs that make small and repeated read calls to the same file or network socket. 
+    // It does not help when reading very large amounts at once, or reading just one or a few times.
+    
+    // Store in buffer?
+    // https://docs.rs/freqfs/0.4.3/freqfs/
+
+    //https://github.com/tokio-rs/axum/discussions/608#discussioncomment-1789020
+    let f = match tokio::fs::File::open(file2get).await {
+        Ok(file) => file,
+        Err(err) => return Err(StatusCode::NOT_FOUND),
+    };
+
+    // convert `AsyncRead` to `Stream`
+    let stream = ReaderStream::new(f);
+
+    // convert `Stream` into `axum::body::HttpBody`
+    let body = StreamBody::new(stream);
+
+    // Packet Headers
+    let headers = 
+    [
+        (axum::http::header::CONTENT_TYPE, "image/png; charset=utf-8".to_string()),
+    ];
+    // Return packet
+    Ok((headers, body))
 }
