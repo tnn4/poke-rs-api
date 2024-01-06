@@ -36,11 +36,11 @@ Directory | Description
 
 Folder structure should look like this
 ```
-bin
+root
 - poke-rs-api (binary)
 - pokeapi-cache
-    - pokemon
-    - berry
+    - pokemon (example endpoint: http://localhost:3001/pokeapi/v2/pokemon/1)
+    - berry (example endpoint: http://localhost:3001/pokeapi/v2/berry/1)
 - mappings
     - berry2id.toml
     - move2did.toml
@@ -67,13 +67,37 @@ $ bin/poke-rs-api --port <your-port>
 # Populate image cache
 Download assets from: https://github.com/HybridShivam/Pokemon
 - Take the `images` and `thumbnails` folder and drop it into the `assets` directory
+
 ```sh
-# PROJECT ROOT
-...
-assets
-    |-- images (assets/images)
-    |-- thumbnails (assets/thumbnails)
-...
+git clone https://github.com/HybridShivam/Pokemon
+
+# there should now be a Pokemon-master directory
+# unzip it
+
+unzip Pokemon-master
+
+Find Pokemon-master/assets/images
+Copy images to root
+Find Pokemon-master/assets/thumbnails
+Copy thumbnails to root
+
+to fetch a picture: http://localhost:3001/api/pokeimg/images/001
+```
+
+Folder structure should now look like this
+```
+- assets
+    - images (example endpoint: http://localhost:3001/api/pokeimg/images/001)
+    - thumbnails (example endpoint: http://localhost:3001/api/pokeimg/thumbnails/001)
+- poke-rs-api (binary)
+- pokeapi-cache
+    - pokemon (example endpoint: http://localhost:3001/pokeapi/v2/pokemon/1)
+    - berry (example endpoint: http://localhost:3001/pokeapi/v2/berry/1)
+- mappings
+    - berry2id.toml
+    - move2did.toml
+    - pokemon2id.toml
+
 ```
 
 ---
