@@ -34,6 +34,19 @@ Directory | Description
 
 # Quick Start
 
+Folder structure should look like this
+```
+bin
+- poke-rs-api (binary)
+- pokeapi-cache
+    - pokemon
+    - berry
+- mappings
+    - berry2id.toml
+    - move2did.toml
+    - pokemon2id.toml
+```
+
 1. Download the release [here]()
 2. Download the source, go to the root of the project
 3. Create a `bin` folder
